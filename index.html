@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>魔術方塊線上公開賽 (Rubik's Cube Championship)</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --accent-color: #00e676;
+            --text-color: #ffffff;
+            --text-secondary: #b0b0b0;
+            --danger-color: #ff5252;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-panel {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn-google {
+            background-color: #ffffff;
+            color: #757575;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+            transition: background 0.2s;
+        }
+
+        .btn-google:hover {
+            background-color: #eee;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-color);
+        }
+
+        .user-name {
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background-color: #ff1744;
+        }
+
+        main {
+            flex: 1;
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 2rem;
+            border-left: 5px solid var(--accent-color);
+        }
+
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .event-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .event-card h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+        }
+
+        .leaderboard-section {
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        th {
+            color: var(--accent-color);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            🧊 魔術方塊線上賽
+        </div>
+        <div class="user-panel">
+            <!-- 未登入狀態 -->
+            <button id="login-btn" class="btn-google">
+                <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                Google 帳號登入
+            </button>
+
+            <!-- 已登入狀態 -->
+            <div id="user-profile" class="user-info hidden">
+                <img id="user-avatar" class="user-avatar" src="" alt="頭像">
+                <span id="user-name" class="user-name"></span>
+                <button id="logout-btn" class="logout-btn">登出</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1>歡迎參加魔術方塊線上公開賽</h1>
+            <p>使用 Google 登入即刻紀錄成績，挑戰即時排行榜！</p>
+        </section>
+
+        <section class="events-section">
+            <h2>進行中賽事</h2>
+            <div class="events-grid">
+                <div class="event-card">
+                    <h3>3x3x3 主賽事</h3>
+                    <p>賽制：Ao5 (5次測速平均)</p>
+                    <p>狀態：<span style="color: var(--accent-color);">進行中</span></p>
+                </div>
+                <div class="event-card">
+                    <h3>2x2x2 快速賽</h3>
+                    <p>賽制：Ao5 (5次測速平均)</p>
+                    <p>狀態：<span style="color: var(--accent-color);">進行中</span></p>
+                </div>
+                <div class="event-card">
+                    <h3>4x4x4 挑戰賽</h3>
+                    <p>賽制：Mo3 (3次測速平均)</p>
+                    <p>狀態：籌備中</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="leaderboard-section">
+            <h2>3x3x3 即時英雄榜 (Firebase Realtime Sync)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>名次</th>
+                        <th>選手名稱</th>
+                        <th>最佳成績</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: var(--text-secondary);">讀取中...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+        import { 
+            getAuth, 
+            signInWithPopup, 
+            GoogleAuthProvider, 
+            signOut, 
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { 
+            getDatabase, 
+            ref, 
+            onValue 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Firebase 專案配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyBMxdzzFR7wuocXEMOYciw2PPJleuRevOw",
+            authDomain: "weifengai-ef11f.firebaseapp.com",
+            databaseURL: "https://weifengai-ef11f-default-rtdb.firebaseio.com",
+            projectId: "weifengai-ef11f",
+            storageBucket: "weifengai-ef11f.firebasestorage.app",
+            messagingSenderId: "474059699642",
+            appId: "1:474059699642:web:b40a3d32be1cd583199983",
+            measurementId: "G-N1TYXP9EWQ"
+        };
+
+        // 初始化 Firebase 服務
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+        const provider = new GoogleAuthProvider();
+
+        // 取得 UI 元素
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userProfile = document.getElementById('user-profile');
+        const userName = document.getElementById('user-name');
+        const userAvatar = document.getElementById('user-avatar');
+        const leaderboardBody = document.getElementById('leaderboard-body');
+
+        // 點擊按鈕觸發 Google 登入
+        loginBtn.addEventListener('click', () => {
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    console.log("登入成功:", result.user);
+                })
+                .catch((error) => {
+                    console.error("登入失敗:", error.message);
+                });
+        });
+
+        // 點擊按鈕觸發登出
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth).then(() => {
+                console.log("已登出");
+            });
+        });
+
+        // 自動監聽會員登入狀態變更
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userName.textContent = user.displayName;
+                userAvatar.src = user.photoURL;
+                loginBtn.classList.add('hidden');
+                userProfile.classList.remove('hidden');
+            } else {
+                loginBtn.classList.remove('hidden');
+                userProfile.classList.add('hidden');
+            }
+        });
+
+        // 即時監聽 Firebase Realtime Database 內的成績數據
+        const leaderboardRef = ref(db, 'scores/3x3');
+        onValue(leaderboardRef, (snapshot) => {
+            const data = snapshot.val();
+            leaderboardBody.innerHTML = '';
+
+            if (!data) {
+                leaderboardBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">目前尚無賽事成績紀錄</td></tr>';
+                return;
+            }
+
+            const scoresArray = Object.values(data);
+            scoresArray.sort((a, b) => a.time - b.time);
+
+            scoresArray.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${item.name}</td>
+                    <td>${item.time.toFixed(2)} 秒</td>
+                `;
+                leaderboardBody.appendChild(tr);
+            });
+        });
+    </script>
+</body>
+</html>
