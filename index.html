@@ -125,6 +125,18 @@
             margin-bottom: 3rem;
         }
 
+        .event-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .event-card h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+        }
+
         .empty-box {
             background-color: var(--card-bg);
             border-radius: 8px;
@@ -228,6 +240,7 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
         import { 
             getAuth, 
             signInWithRedirect, 
@@ -242,18 +255,20 @@
             onValue 
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+        // 更新為你最新的 Firebase Config
         const firebaseConfig = {
-            apiKey: "AIzaSyBMxdzzFR7wuocXEMOYciw2PPJleuRevOw",
-            authDomain: "weifengai-ef11f.firebaseapp.com",
-            databaseURL: "https://weifengai-ef11f-default-rtdb.firebaseio.com",
-            projectId: "weifengai-ef11f",
-            storageBucket: "weifengai-ef11f.firebasestorage.app",
-            messagingSenderId: "474059699642",
-            appId: "1:474059699642:web:b40a3d32be1cd583199983",
-            measurementId: "G-N1TYXP9EWQ"
+            apiKey: "AIzaSyCjqWbTNTscNcwQxXl4yDskncVO4g9b2u8",
+            authDomain: "rubiks-cube-competition.firebaseapp.com",
+            databaseURL: "https://rubiks-cube-competition-default-rtdb.firebaseio.com",
+            projectId: "rubiks-cube-competition",
+            storageBucket: "rubiks-cube-competition.firebasestorage.app",
+            messagingSenderId: "592231588827",
+            appId: "1:592231588827:web:0884f712aaa44d79d33dfe",
+            measurementId: "G-JN13BJNV1Y"
         };
 
         const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
         const auth = getAuth(app);
         const db = getDatabase(app);
         const provider = new GoogleAuthProvider();
@@ -266,14 +281,14 @@
         const eventsContainer = document.getElementById('events-container');
         const leaderboardBody = document.getElementById('leaderboard-body');
 
-        // 改用轉址方式 (signInWithRedirect) 防範快彈窗閃退問題
+        // 使用轉址登入 (signInWithRedirect)
         loginBtn.addEventListener('click', () => {
             signInWithRedirect(auth, provider);
         });
 
-        // 檢查轉址登入結果
+        // 接收轉址回來的登入結果
         getRedirectResult(auth).catch((error) => {
-            console.error("登入出錯：", error.message);
+            console.error("登入失敗：", error.message);
         });
 
         // 登出
@@ -281,7 +296,7 @@
             signOut(auth);
         });
 
-        // 監聽使用者登入狀態
+        // 監聽登入狀態
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 userName.textContent = user.displayName || "選手";
@@ -294,7 +309,7 @@
             }
         });
 
-        // 監聽 Firebase 中的賽事資料
+        // 監聽賽事資料 (無資料時顯示「🚫 目前暫無進行中的比賽」)
         const eventsRef = ref(db, 'events');
         onValue(eventsRef, (snapshot) => {
             const events = snapshot.val();
