@@ -125,16 +125,14 @@
             margin-bottom: 3rem;
         }
 
-        .event-card {
+        .empty-box {
             background-color: var(--card-bg);
             border-radius: 8px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        }
-
-        .event-card h3 {
-            margin-top: 0;
-            color: var(--accent-color);
+            padding: 3rem 1.5rem;
+            text-align: center;
+            color: var(--text-secondary);
+            border: 2px dashed #333;
+            margin-bottom: 3rem;
         }
 
         .leaderboard-section {
@@ -194,32 +192,22 @@
     <main>
         <section class="hero">
             <h1>歡迎參加魔術方塊線上公開賽</h1>
-            <p>使用 Google 登入即刻紀錄成績，挑戰即時排行榜！</p>
+            <p>登入 Google 帳號即可報名比賽與同步個人成績！</p>
         </section>
 
         <section class="events-section">
             <h2>進行中賽事</h2>
-            <div class="events-grid">
-                <div class="event-card">
-                    <h3>3x3x3 主賽事</h3>
-                    <p>賽制：Ao5 (5次測速平均)</p>
-                    <p>狀態：<span style="color: var(--accent-color);">進行中</span></p>
-                </div>
-                <div class="event-card">
-                    <h3>2x2x2 快速賽</h3>
-                    <p>賽制：Ao5 (5次測速平均)</p>
-                    <p>狀態：<span style="color: var(--accent-color);">進行中</span></p>
-                </div>
-                <div class="event-card">
-                    <h3>4x4x4 挑戰賽</h3>
-                    <p>賽制：Mo3 (3次測速平均)</p>
-                    <p>狀態：籌備中</p>
+            <!-- 賽事動態渲染區塊 -->
+            <div id="events-container">
+                <div class="empty-box">
+                    <p style="font-size: 1.2rem; margin-bottom: 0.5rem;">🚫 目前暫無進行中的比賽</p>
+                    <p style="font-size: 0.9rem;">新賽事籌備中，請持續關注本頁面！</p>
                 </div>
             </div>
         </section>
 
         <section class="leaderboard-section">
-            <h2>3x3x3 即時英雄榜 (Firebase Realtime Sync)</h2>
+            <h2>即時英雄榜 (Firebase Realtime Sync)</h2>
             <table>
                 <thead>
                     <tr>
@@ -230,7 +218,7 @@
                 </thead>
                 <tbody id="leaderboard-body">
                     <tr>
-                        <td colspan="3" style="text-align: center; color: var(--text-secondary);">讀取中...</td>
+                        <td colspan="3" style="text-align: center; color: var(--text-secondary);">目前尚無賽事成績紀錄</td>
                     </tr>
                 </tbody>
             </table>
@@ -240,10 +228,10 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
         import { 
             getAuth, 
-            signInWithPopup, 
+            signInWithRedirect, 
+            getRedirectResult,
             GoogleAuthProvider, 
             signOut, 
             onAuthStateChanged 
@@ -254,7 +242,6 @@
             onValue 
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Firebase 專案配置
         const firebaseConfig = {
             apiKey: "AIzaSyBMxdzzFR7wuocXEMOYciw2PPJleuRevOw",
             authDomain: "weifengai-ef11f.firebaseapp.com",
@@ -266,44 +253,39 @@
             measurementId: "G-N1TYXP9EWQ"
         };
 
-        // 初始化 Firebase 服務
         const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
         const auth = getAuth(app);
         const db = getDatabase(app);
         const provider = new GoogleAuthProvider();
 
-        // 取得 UI 元素
         const loginBtn = document.getElementById('login-btn');
         const logoutBtn = document.getElementById('logout-btn');
         const userProfile = document.getElementById('user-profile');
         const userName = document.getElementById('user-name');
         const userAvatar = document.getElementById('user-avatar');
+        const eventsContainer = document.getElementById('events-container');
         const leaderboardBody = document.getElementById('leaderboard-body');
 
-        // 點擊按鈕觸發 Google 登入
+        // 改用轉址方式 (signInWithRedirect) 防範快彈窗閃退問題
         loginBtn.addEventListener('click', () => {
-            signInWithPopup(auth, provider)
-                .then((result) => {
-                    console.log("登入成功:", result.user);
-                })
-                .catch((error) => {
-                    console.error("登入失敗:", error.message);
-                });
+            signInWithRedirect(auth, provider);
         });
 
-        // 點擊按鈕觸發登出
+        // 檢查轉址登入結果
+        getRedirectResult(auth).catch((error) => {
+            console.error("登入出錯：", error.message);
+        });
+
+        // 登出
         logoutBtn.addEventListener('click', () => {
-            signOut(auth).then(() => {
-                console.log("已登出");
-            });
+            signOut(auth);
         });
 
-        // 自動監聽會員登入狀態變更
+        // 監聽使用者登入狀態
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                userName.textContent = user.displayName;
-                userAvatar.src = user.photoURL;
+                userName.textContent = user.displayName || "選手";
+                userAvatar.src = user.photoURL || "https://via.placeholder.com/40";
                 loginBtn.classList.add('hidden');
                 userProfile.classList.remove('hidden');
             } else {
@@ -312,7 +294,34 @@
             }
         });
 
-        // 即時監聽 Firebase Realtime Database 內的成績數據
+        // 監聽 Firebase 中的賽事資料
+        const eventsRef = ref(db, 'events');
+        onValue(eventsRef, (snapshot) => {
+            const events = snapshot.val();
+            if (!events || Object.keys(events).length === 0) {
+                eventsContainer.innerHTML = `
+                    <div class="empty-box">
+                        <p style="font-size: 1.2rem; margin-bottom: 0.5rem;">🚫 目前暫無進行中的比賽</p>
+                        <p style="font-size: 0.9rem;">新賽事籌備中，請持續關注本頁面！</p>
+                    </div>
+                `;
+            } else {
+                let html = '<div class="events-grid">';
+                Object.values(events).forEach(event => {
+                    html += `
+                        <div class="event-card">
+                            <h3>${event.title}</h3>
+                            <p>賽制：${event.rule}</p>
+                            <p>狀態：<span style="color: var(--accent-color);">${event.status}</span></p>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                eventsContainer.innerHTML = html;
+            }
+        });
+
+        // 監聽英雄榜資料
         const leaderboardRef = ref(db, 'scores/3x3');
         onValue(leaderboardRef, (snapshot) => {
             const data = snapshot.val();
