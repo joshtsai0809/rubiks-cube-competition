@@ -6,893 +6,660 @@
     <title>線上魔術方塊比賽網</title>
     <style>
         :root {
-            --bg-color: #121212;
+            --bg-dark: #121212;
             --card-bg: #1e1e1e;
-            --accent-color: #00e676;
-            --accent-blue: #29b6f6;
-            --accent-purple: #ab47bc;
-            --text-color: #ffffff;
-            --text-secondary: #b0b0b0;
-            --danger-color: #ff5252;
+            --card-inner: #262626;
             --input-bg: #2d2d2d;
-            --border-color: #333333;
+            --input-border: #404040;
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
+            --primary-green: #00e676;
+            --primary-green-hover: #00c853;
+            --danger-red: #ff5252;
+            --accent-blue: #64b5f6;
         }
 
-        * { box-sizing: border-box; }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
-        header {
-            background-color: var(--card-bg);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            padding: 24px;
+            line-height: 1.5;
         }
 
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--accent-color);
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
         }
 
-        .user-panel {
+        /* 頂部導覽頁籤標籤 */
+        .main-tabs {
             display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .btn-google {
-            background-color: #ffffff;
-            color: #757575;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 4px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.25);
-            transition: background 0.2s;
-        }
-
-        .btn-google:hover { background-color: #eee; }
-
-        .user-info {
-            display: flex;
-            align-items: center;
             gap: 12px;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid var(--accent-color);
-        }
-
-        .admin-badge {
-            background-color: #ff9800;
-            color: #000;
-            font-size: 0.75rem;
-            font-weight: bold;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        .logout-btn {
-            background-color: var(--danger-color);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s;
-        }
-
-        .logout-btn:hover { background-color: #ff1744; }
-
-        main {
-            flex: 1;
-            max-width: 1100px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-            width: 100%;
-        }
-
-        /* 導覽分頁按鈕 */
-        .nav-tabs {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 24px;
+            border-bottom: 2px solid #2a2a2a;
+            padding-bottom: 8px;
         }
 
         .tab-btn {
             background: none;
             border: none;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             font-size: 1.1rem;
-            font-weight: bold;
-            padding: 0.8rem 1.2rem;
+            font-weight: 700;
+            padding: 10px 18px;
             cursor: pointer;
-            border-bottom: 3px solid transparent;
+            border-radius: 6px;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: #ffffff;
+            background-color: #1f1f1f;
         }
 
         .tab-btn.active {
-            color: var(--accent-color);
-            border-bottom-color: var(--accent-color);
+            color: var(--primary-green);
+            background-color: #1a2a20;
+            border-bottom: 3px solid var(--primary-green);
         }
 
-        /* 個人紀錄看板 */
-        .records-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+        /* 頁籤分頁區域 */
+        .tab-content {
+            display: none;
         }
 
-        .record-card {
-            background-color: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 8px;
-            border-top: 4px solid var(--accent-color);
-            text-align: center;
+        .tab-content.active {
+            display: block;
         }
 
-        .record-card.ao5 { border-top-color: var(--accent-blue); }
-
-        .record-title {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .record-value {
-            font-size: 2.5rem;
+        /* 控制台主卡片 */
+        .page-header {
+            color: var(--primary-green);
+            font-size: 1.5rem;
             font-weight: bold;
-            font-family: 'Courier New', Courier, monospace;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .admin-section, .content-section {
+        .main-card {
             background-color: var(--card-bg);
-            padding: 1.5rem;
             border-radius: 8px;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-
-        .admin-section h2, .content-section h2 {
-            margin-top: 0;
-            color: var(--accent-color);
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.5rem;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            margin-bottom: 30px;
         }
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
         }
 
         .form-group {
             display: flex;
             flex-direction: column;
-            gap: 0.4rem;
+            gap: 8px;
         }
 
-        .form-group label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
+        .form-group.col-1 { grid-column: span 1; }
+        .form-group.col-2 { grid-column: span 2; }
+        .form-group.col-3 { grid-column: span 3; }
+        .form-group.col-4 { grid-column: span 4; }
+
+        label {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            font-weight: 600;
         }
 
-        input, select, button {
+        input[type="text"],
+        input[type="number"],
+        input[type="datetime-local"],
+        select {
             background-color: var(--input-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            padding: 10px;
-            border-radius: 4px;
+            border: 1px solid var(--input-border);
+            color: var(--text-main);
+            padding: 10px 12px;
+            border-radius: 6px;
             font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            width: 100%;
         }
 
         input:focus, select:focus {
-            outline: none;
-            border-color: var(--accent-color);
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.2);
         }
 
-        /* 輪數設定動態區域 */
-        .rounds-config-container {
-            background-color: #181818;
-            padding: 1rem;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            margin-bottom: 1rem;
+        /* 輪次獨立時間與設定區塊 */
+        .rounds-section {
+            background-color: var(--card-inner);
+            border: 1px solid #333333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
         }
 
-        .round-setting-item {
-            display: grid;
-            grid-template-columns: 80px 1fr 1fr;
-            gap: 10px;
+        .rounds-section-title {
+            display: flex;
             align-items: center;
-            margin-bottom: 8px;
-            padding-bottom: 8px;
-            border-bottom: 1px dashed #333;
-        }
-
-        .btn-submit {
-            background-color: var(--accent-color);
-            color: #000;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-            padding: 12px;
-            width: 100%;
-            border-radius: 4px;
+            gap: 8px;
             font-size: 1rem;
-            transition: opacity 0.2s;
-        }
-
-        .btn-submit:hover { opacity: 0.9; }
-
-        .btn-join {
-            background-color: var(--accent-blue);
-            color: #000;
             font-weight: bold;
-            border: none;
-            cursor: pointer;
-            padding: 8px 16px;
-            border-radius: 4px;
-            transition: background 0.2s;
+            color: #eeeeee;
+            margin-bottom: 16px;
         }
 
-        .btn-join:hover { background-color: #81d4fa; }
-
-        .btn-join:disabled {
-            background-color: #555;
-            color: #888;
-            cursor: not-allowed;
+        .round-card {
+            background-color: #1e1e1e;
+            border: 1px solid #383838;
+            border-radius: 6px;
+            padding: 18px;
+            margin-bottom: 16px;
         }
 
-        .events-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .event-card {
-            background-color: #252525;
-            border-radius: 8px;
-            padding: 1.5rem;
-            border-left: 4px solid var(--accent-color);
-        }
-
-        .event-header {
+        .round-card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #2a2a2a;
         }
 
-        .event-title {
-            font-size: 1.3rem;
+        .round-title {
+            color: var(--accent-blue);
             font-weight: bold;
-            margin: 0;
-            color: #fff;
+            font-size: 1.05rem;
         }
 
-        .event-details {
+        .round-form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 0.8rem;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            margin-bottom: 1rem;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
         }
 
-        .event-details span { color: #fff; font-weight: bold; }
-
-        /* 每輪規則列表 */
-        .rounds-info {
-            background-color: #1c1c1c;
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin-top: 10px;
-        }
-
-        .rounds-info-title {
-            font-size: 0.9rem;
-            color: var(--accent-color);
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .round-info-step {
-            font-size: 0.85rem;
-            color: #ddd;
-            margin: 3px 0;
-        }
-
-        /* 淘汰賽樹狀圖 */
-        .bracket-container {
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px dashed var(--border-color);
-            overflow-x: auto;
-        }
-
-        .bracket-tree {
+        .inline-group {
             display: flex;
-            gap: 1.5rem;
-            min-width: 500px;
+            align-items: center;
+            gap: 10px;
         }
 
-        .bracket-round {
+        /* 發布按鈕 */
+        .btn-submit {
+            width: 100%;
+            background-color: var(--primary-green);
+            color: #000000;
+            font-weight: bold;
+            font-size: 1.15rem;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: background-color 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--primary-green-hover);
+        }
+
+        .btn-submit:active {
+            transform: scale(0.99);
+        }
+
+        /* 賽事卡片展示 */
+        .match-card {
+            background-color: var(--card-bg);
+            border-left: 5px solid var(--primary-green);
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .match-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--primary-green);
+        }
+
+        .match-meta {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .match-rounds-list {
             display: flex;
             flex-direction: column;
-            justify-content: space-around;
-            flex: 1;
+            gap: 8px;
+            margin-top: 12px;
+            background-color: var(--card-inner);
+            padding: 12px;
+            border-radius: 6px;
         }
 
-        .bracket-match {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            margin: 6px 0;
-            padding: 6px;
-        }
-
-        .bracket-player {
-            padding: 3px 6px;
-            background-color: var(--input-bg);
-            border-radius: 2px;
-            font-size: 0.8rem;
-            margin: 2px 0;
+        .round-tag {
+            font-size: 0.88rem;
+            color: #dddddd;
             display: flex;
             justify-content: space-between;
+            border-bottom: 1px dashed #3a3a3a;
+            padding-bottom: 6px;
         }
 
-        .empty-box {
-            background-color: var(--card-bg);
-            border-radius: 8px;
-            padding: 3rem 1.5rem;
+        .round-tag:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .empty-state {
+            color: var(--text-muted);
             text-align: center;
-            color: var(--text-secondary);
-            border: 2px dashed #333;
+            padding: 40px 20px;
+            border: 2px dashed #333333;
+            border-radius: 8px;
         }
 
-        /* 搜尋列 */
-        .search-bar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 1.5rem;
+        /* RWD 視窗響應 */
+        @media (max-width: 820px) {
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .form-group.col-1, .form-group.col-2, .form-group.col-3, .form-group.col-4 {
+                grid-column: span 2;
+            }
+            .round-form-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
-        .search-bar input { flex: 1; }
-
-        .hidden { display: none !important; }
+        @media (max-width: 520px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-group.col-1, .form-group.col-2, .form-group.col-3, .form-group.col-4 {
+                grid-column: span 1;
+            }
+            .main-tabs {
+                flex-direction: column;
+                gap: 6px;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="logo">🧊 線上魔術方塊比賽網</div>
-        <div class="user-panel">
-            <button id="login-btn" class="btn-google">
-                <svg width="18" height="18" viewBox="0 0 48 48">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                </svg>
-                Google 帳號登入
-            </button>
+<div class="container">
+    <!-- 頂部選單切換 -->
+    <div class="main-tabs">
+        <button type="button" class="tab-btn active" onclick="switchMainTab('adminTab', this)">
+            ⚙️ 管理員控制台：舉辦新賽事
+        </button>
+        <button type="button" class="tab-btn" onclick="switchMainTab('matchesTab', this)">
+            🔥 報名 / 進行中賽事
+        </button>
+        <button type="button" class="tab-btn" onclick="switchMainTab('resultsTab', this)">
+            🔍 成績查詢
+        </button>
+    </div>
 
-            <div id="user-profile" class="user-info hidden">
-                <img id="user-avatar" class="user-avatar" src="" alt="頭像">
-                <div>
-                    <span id="user-name" class="user-name"></span>
-                    <span id="admin-tag" class="admin-badge hidden">管理員</span>
-                </div>
-                <button id="logout-btn" class="logout-btn">登出</button>
-            </div>
-        </div>
-    </header>
-
-    <main>
-        <!-- 個人最佳成績看板 -->
-        <section class="records-grid">
-            <div class="record-card">
-                <div class="record-title">個人最快紀錄 (PB Single)</div>
-                <div id="pb-single" class="record-value">--.--</div>
-            </div>
-            <div class="record-card ao5">
-                <div class="record-title">個人 AO5 最快紀錄 (PB AO5)</div>
-                <div id="pb-ao5" class="record-value">--.--</div>
-            </div>
-        </section>
-
-        <!-- 管理員賽事發布面板 (僅 jses0809@gmail.com 可見) -->
-        <section id="admin-panel" class="admin-section hidden">
-            <h2>⚙️ 管理員控制台：舉辦新賽事</h2>
-            <form id="create-event-form">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>比賽名稱</label>
-                        <input type="text" id="event-title" placeholder="例：2026 春季公開賽" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>比賽項目</label>
-                        <select id="event-category">
-                            <option value="2x2">2x2x2 魔術方塊</option>
-                            <option value="3x3" selected>3x3x3 魔術方塊</option>
-                            <option value="4x4">4x4x4 魔術方塊</option>
-                            <option value="5x5">5x5x5 魔術方塊</option>
-                            <option value="Pyraminx">金字塔 (Pyraminx)</option>
-                            <option value="Skewb">斜轉 (Skewb)</option>
-                            <option value="Megaminx">五魔 (Megaminx)</option>
-                            <option value="Square-1">Square-1 (SQ1)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>賽制規範</label>
-                        <select id="event-format">
-                            <option value="AO5">AO5 (去頭去尾平均)</option>
-                            <option value="AO12">AO12 (去頭去尾平均)</option>
-                            <option value="Mo3">三次平均 (Mean of 3)</option>
-                            <option value="Bo1">1次 (Best of 1)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>報名人數上限</label>
-                        <input type="number" id="event-max-players" min="2" value="16" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>開始時間</label>
-                        <input type="datetime-local" id="event-start" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>結束時間</label>
-                        <input type="datetime-local" id="event-end" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>比賽總輪數</label>
-                        <input type="number" id="event-rounds-count" min="1" max="5" value="2" required>
-                    </div>
-                </div>
-
-                <!-- 動態生成的各輪晉級規則設定區 -->
-                <div class="rounds-config-container">
-                    <label style="font-size: 0.9rem; color: var(--accent-color); font-weight: bold; margin-bottom: 10px; display: block;">
-                        📋 設定每一輪的晉級規則/賽制
-                    </label>
-                    <div id="rounds-settings-list">
-                        <!-- 由 JavaScript 動態生成 -->
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-submit">🚀 發布比賽</button>
-            </form>
-        </section>
-
-        <!-- 頁籤導覽 -->
-        <div class="nav-tabs">
-            <button class="tab-btn active" onclick="switchTab('active-events')">🔥 報名 / 進行中賽事</button>
-            <button class="tab-btn" onclick="switchTab('search-results')">🔍 成績查詢</button>
+    <!-- 1. 管理員控制台 -->
+    <div id="adminTab" class="tab-content active">
+        <div class="page-header">
+            ⚙️ 管理員控制台：舉辦新賽事
         </div>
 
-        <!-- 頁籤一：進行中/報名賽事 -->
-        <section id="tab-active-events" class="content-section">
-            <div id="active-events-list" class="events-list">
-                <div class="empty-box">
-                    <p style="font-size: 1.2rem;">🚫 目前沒有進行中或開放報名的比賽</p>
+        <form id="competitionForm" class="main-card">
+            <div class="form-grid">
+                <div class="form-group col-2">
+                    <label for="compName">比賽名稱</label>
+                    <input type="text" id="compName" placeholder="例：2026 春季公開賽" required>
+                </div>
+
+                <div class="form-group col-1">
+                    <label for="compItem">比賽項目</label>
+                    <select id="compItem">
+                        <option value="3x3x3 魔術方塊">3x3x3 魔術方塊</option>
+                        <option value="2x2x2 魔術方塊">2x2x2 魔術方塊</option>
+                        <option value="4x4x4 魔術方塊">4x4x4 魔術方塊</option>
+                        <option value="3x3x3 單手">3x3x3 單手</option>
+                        <option value="金字塔魔術方塊">金字塔魔術方塊</option>
+                        <option value="斜轉魔術方塊">斜轉魔術方塊</option>
+                    </select>
+                </div>
+
+                <div class="form-group col-1">
+                    <label for="compRule">賽制規範</label>
+                    <select id="compRule">
+                        <option value="AO5 (去頭去尾平均)">AO5 (去頭去尾平均)</option>
+                        <option value="MO3 (三次平均)">MO3 (三次平均)</option>
+                        <option value="BO1 (單次最佳)">BO1 (單次最佳)</option>
+                        <option value="BO2 (兩次取最佳)">BO2 (兩次取最佳)</option>
+                    </select>
+                </div>
+
+                <div class="form-group col-2">
+                    <label for="maxPlayers">報名人數上限</label>
+                    <input type="number" id="maxPlayers" value="16" min="1" required>
+                </div>
+
+                <div class="form-group col-2">
+                    <label for="totalRounds">比賽總輪數</label>
+                    <input type="number" id="totalRounds" value="2" min="1" max="10" required>
                 </div>
             </div>
-        </section>
 
-        <!-- 頁籤二：成績查詢 -->
-        <section id="tab-search-results" class="content-section hidden">
-            <div class="search-bar">
-                <input type="text" id="search-keyword" placeholder="輸入選手姓名或賽事名稱查詢...">
-                <button onclick="performSearch()">搜尋</button>
-            </div>
-            <div id="search-results-list" class="events-list">
-                <div class="empty-box">
-                    <p style="font-size: 1.2rem;">請在上方輸入關鍵字查詢歷史成績</p>
+            <!-- 每一輪獨立時間設定區塊 -->
+            <div class="rounds-section">
+                <div class="rounds-section-title">
+                    📋 設定每一輪的時間與晉級規則 / 賽制
+                </div>
+
+                <div id="roundsContainer">
+                    <!-- 輪次項目動態生成 -->
                 </div>
             </div>
-        </section>
-    </main>
 
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { 
-            getAuth, 
-            signInWithPopup, 
-            GoogleAuthProvider, 
-            signOut, 
-            onAuthStateChanged,
-            setPersistence,
-            browserLocalPersistence
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { 
-            getDatabase, 
-            ref, 
-            set,
-            push,
-            get,
-            onValue 
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+            <button type="submit" class="btn-submit">🚀 發布比賽</button>
+        </form>
+    </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCjqWbTNTscNcwQxXl4yDskncVO4g9b2u8",
-            authDomain: "rubiks-cube-competition.firebaseapp.com",
-            databaseURL: "https://rubiks-cube-competition-default-rtdb.firebaseio.com",
-            projectId: "rubiks-cube-competition",
-            storageBucket: "rubiks-cube-competition.firebasestorage.app",
-            messagingSenderId: "592231588827",
-            appId: "1:592231588827:web:0884f712aaa44d79d33dfe",
-            measurementId: "G-JN13BJNV1Y"
-        };
+    <!-- 2. 報名 / 進行中賽事區 -->
+    <div id="matchesTab" class="tab-content">
+        <div class="main-card">
+            <h2 style="font-size: 1.3rem; margin-bottom: 20px; color: var(--primary-green);">🔥 當前舉辦的賽事</h2>
+            <div id="matchesList">
+                <div class="empty-state">目前尚未發布任何比賽，請透過管理員控制台進行發布。</div>
+            </div>
+        </div>
+    </div>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getDatabase(app);
-        const provider = new GoogleAuthProvider();
+    <!-- 3. 成績查詢區 -->
+    <div id="resultsTab" class="tab-content">
+        <div class="main-card">
+            <h2 style="font-size: 1.3rem; margin-bottom: 20px; color: var(--primary-green);">🔍 選手成績與輪次查詢</h2>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label for="searchMatchSelect">請選擇比賽名稱</label>
+                <select id="searchMatchSelect" onchange="renderMatchResults(this.value)">
+                    <option value="">-- 請選擇比賽 --</option>
+                </select>
+            </div>
+            <div id="resultsDisplayArea" class="empty-state">
+                請選擇欲查詢的比賽以檢視各輪次的獨立開放時間與晉級名單。
+            </div>
+        </div>
+    </div>
+</div>
 
-        setPersistence(auth, browserLocalPersistence);
+<script>
+    // 全域賽事資料庫
+    let globalCompetitions = [];
 
-        const ADMIN_EMAIL = "jses0809@gmail.com";
-        let currentUser = null;
+    // DOM 元素選取
+    const totalRoundsInput = document.getElementById('totalRounds');
+    const roundsContainer = document.getElementById('roundsContainer');
+    const competitionForm = document.getElementById('competitionForm');
+    const matchesList = document.getElementById('matchesList');
+    const searchMatchSelect = document.getElementById('searchMatchSelect');
+    const resultsDisplayArea = document.getElementById('resultsDisplayArea');
 
-        const loginBtn = document.getElementById('login-btn');
-        const logoutBtn = document.getElementById('logout-btn');
-        const userProfile = document.getElementById('user-profile');
-        const userName = document.getElementById('user-name');
-        const userAvatar = document.getElementById('user-avatar');
-        const adminTag = document.getElementById('admin-tag');
-        const adminPanel = document.getElementById('admin-panel');
-        const activeEventsList = document.getElementById('active-events-list');
-        const createEventForm = document.getElementById('create-event-form');
-        const roundsCountInput = document.getElementById('event-rounds-count');
-        const roundsSettingsList = document.getElementById('rounds-settings-list');
+    // 切換主要分頁
+    function switchMainTab(tabId, element) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
 
-        // 登入
-        loginBtn.addEventListener('click', async () => {
-            try {
-                await signInWithPopup(auth, provider);
-            } catch (error) {
-                alert(`登入失敗：${error.message}`);
-            }
-        });
+        document.getElementById(tabId).classList.add('active');
+        element.classList.add('active');
+    }
 
-        // 登出
-        logoutBtn.addEventListener('click', () => signOut(auth));
+    // 格式化日期時間點字串
+    function formatDateTime(dateTimeLocalStr) {
+        if (!dateTimeLocalStr) return '未設定時間';
+        const date = new Date(dateTimeLocalStr);
+        if (isNaN(date.getTime())) return dateTimeLocalStr;
+        
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
 
-        // 登入狀態變更
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            if (user) {
-                userName.textContent = user.displayName || "選手";
-                userAvatar.src = user.photoURL || "https://via.placeholder.com/40";
-                loginBtn.classList.add('hidden');
-                userProfile.classList.remove('hidden');
+        return `${year}-${month}-${day} ${hours}:${minutes}`;
+    }
 
-                if (user.email === ADMIN_EMAIL) {
-                    adminTag.classList.remove('hidden');
-                    adminPanel.classList.remove('hidden');
-                } else {
-                    adminTag.classList.add('hidden');
-                    adminPanel.classList.add('hidden');
-                }
-                loadPersonalRecords(user.uid);
-            } else {
-                loginBtn.classList.remove('hidden');
-                userProfile.classList.add('hidden');
-                adminTag.classList.add('hidden');
-                adminPanel.classList.add('hidden');
-                document.getElementById('pb-single').textContent = '--.--';
-                document.getElementById('pb-ao5').textContent = '--.--';
-            }
-            fetchEvents();
-        });
+    // 動態產生每一輪專屬的時間與賽制欄位
+    function buildRoundFields() {
+        const roundCount = parseInt(totalRoundsInput.value) || 1;
+        roundsContainer.innerHTML = '';
 
-        // 動態生成每一輪的設定欄位
-        function updateRoundsSettingsUI() {
-            const count = parseInt(roundsCountInput.value) || 1;
-            roundsSettingsList.innerHTML = '';
+        for (let i = 1; i <= roundCount; i++) {
+            const isFinalRound = (i === roundCount);
+            const roundDiv = document.createElement('div');
+            roundDiv.className = 'round-card';
 
-            for (let i = 1; i <= count; i++) {
-                const item = document.createElement('div');
-                item.className = 'round-setting-item';
-                
-                if (i === count) {
-                    // 第一輪到最後一輪（決賽）
-                    item.innerHTML = `
-                        <span style="font-weight: bold; color: var(--accent-blue);">第 ${i} 輪 (決賽)</span>
-                        <select class="round-type" data-round="${i}" style="grid-column: span 2;">
-                            <option value="ranking">排名決賽 (選出冠亞季軍)</option>
-                            <option value="knockout">單淘汰決賽 (冠亞軍對決)</option>
-                        </select>
-                    `;
-                } else {
-                    item.innerHTML = `
-                        <span style="font-weight: bold;">第 ${i} 輪</span>
-                        <select class="round-type" data-round="${i}">
-                            <option value="ranking">標準排名晉級</option>
-                            <option value="knockout">單淘汰賽</option>
-                        </select>
-                        <div style="display: flex; gap: 5px;">
-                            <input type="number" class="round-adv-val" placeholder="數字" value="50" style="width: 60%;">
-                            <select class="round-adv-type" style="width: 40%;">
-                                <option value="%">% 人數</option>
-                                <option value="名">人</option>
+            const roundTitleText = isFinalRound && roundCount > 1 ? `第 ${i} 輪 (決賽)` : `第 ${i} 輪`;
+
+            roundDiv.innerHTML = `
+                <div class="round-card-header">
+                    <span class="round-title">${roundTitleText}</span>
+                </div>
+                <div class="round-form-grid">
+                    <div class="form-group">
+                        <label>第 ${i} 輪 開始時間</label>
+                        <input type="datetime-local" class="round-start-time" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>第 ${i} 輪 結束時間</label>
+                        <input type="datetime-local" class="round-end-time" required>
+                    </div>
+
+                    <div class="form-group col-2">
+                        <label>晉級規則 / 賽制設定</label>
+                        ${isFinalRound ? `
+                            <select class="round-advance-type" disabled>
+                                <option value="final">排名決賽 (選出冠亞季軍)</option>
                             </select>
-                        </div>
-                    `;
-                }
-                roundsSettingsList.appendChild(item);
-            }
-        }
-
-        roundsCountInput.addEventListener('change', updateRoundsSettingsUI);
-        updateRoundsSettingsUI(); // 初始化
-
-        // 讀取個人 PB
-        function loadPersonalRecords(uid) {
-            const userRecordRef = ref(db, `users/${uid}/records/3x3`);
-            onValue(userRecordRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    document.getElementById('pb-single').textContent = data.single ? `${data.single.toFixed(2)}s` : '--.--';
-                    document.getElementById('pb-ao5').textContent = data.ao5 ? `${data.ao5.toFixed(2)}s` : '--.--';
-                }
-            });
-        }
-
-        // 發布比賽
-        createEventForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
-                alert("權限不足");
-                return;
-            }
-
-            const totalRounds = parseInt(roundsCountInput.value);
-            const roundsConfig = [];
-
-            const roundItems = roundsSettingsList.querySelectorAll('.round-setting-item');
-            roundItems.forEach((item, index) => {
-                const rNum = index + 1;
-                const type = item.querySelector('.round-type').value;
-                if (rNum === totalRounds) {
-                    roundsConfig.push({ round: rNum, type: type, rule: "決賽" });
-                } else {
-                    const val = item.querySelector('.round-adv-val').value;
-                    const unit = item.querySelector('.round-adv-type').value;
-                    roundsConfig.push({
-                        round: rNum,
-                        type: type,
-                        rule: type === 'knockout' ? '單淘汰晉級' : `晉級前 ${val}${unit}`
-                    });
-                }
-            });
-
-            const newEvent = {
-                title: document.getElementById('event-title').value,
-                category: document.getElementById('event-category').value,
-                format: document.getElementById('event-format').value,
-                startTime: document.getElementById('event-start').value,
-                endTime: document.getElementById('event-end').value,
-                maxPlayers: parseInt(document.getElementById('event-max-players').value),
-                totalRounds: totalRounds,
-                roundsConfig: roundsConfig,
-                createdAt: Date.now()
-            };
-
-            try {
-                const eventsRef = ref(db, 'events');
-                await push(eventsRef, newEvent);
-                alert("🎉 賽事成功發布！");
-                createEventForm.reset();
-                updateRoundsSettingsUI();
-            } catch (err) {
-                alert(`發布失敗: ${err.message}`);
-            }
-        });
-
-        // 獲取並渲染賽事列表
-        function fetchEvents() {
-            const eventsRef = ref(db, 'events');
-            onValue(eventsRef, (snapshot) => {
-                const events = snapshot.val();
-                if (!events) {
-                    activeEventsList.innerHTML = `<div class="empty-box"><p style="font-size: 1.2rem;">🚫 目前沒有比賽</p></div>`;
-                    return;
-                }
-
-                activeEventsList.innerHTML = '';
-                Object.keys(events).forEach(key => {
-                    const ev = events[key];
-                    const card = renderEventCard(key, ev);
-                    activeEventsList.appendChild(card);
-                });
-            });
-        }
-
-        // 渲染單個賽事卡片
-        function renderEventCard(eventId, ev) {
-            const card = document.createElement('div');
-            card.className = 'event-card';
-
-            const playersCount = ev.participants ? Object.keys(ev.participants).length : 0;
-            const isJoined = currentUser && ev.participants && ev.participants[currentUser.uid];
-
-            let roundsRuleHTML = '<div class="rounds-info"><div class="rounds-info-title">🏆 各輪晉級與賽制規劃：</div>';
-            let bracketHTML = '';
-
-            ev.roundsConfig.forEach(r => {
-                roundsRuleHTML += `<div class="round-info-step">▪ 第 ${r.round} 輪：[${r.type === 'knockout' ? '單淘汰賽' : '標準排名'}] ${r.rule}</div>`;
-                if (r.type === 'knockout') {
-                    bracketHTML += renderBracketTree(r.round, ev.maxPlayers);
-                }
-            });
-            roundsRuleHTML += '</div>';
-
-            card.innerHTML = `
-                <div class="event-header">
-                    <h3 class="event-title">${ev.title}</h3>
-                    <button class="btn-join" id="join-btn-${eventId}" ${isJoined ? 'disabled' : ''}>
-                        ${isJoined ? '已報名' : '立即報名'}
-                    </button>
+                        ` : `
+                            <div class="inline-group">
+                                <select class="round-advance-type" style="flex: 2;">
+                                    <option value="rank">標準排名晉級</option>
+                                    <option value="time">時間門檻晉級</option>
+                                </select>
+                                <input type="number" class="round-advance-value" value="50" style="flex: 1;" min="1">
+                                <select class="round-advance-unit" style="flex: 1;">
+                                    <option value="percent">% 人數</option>
+                                    <option value="count">名人數</option>
+                                </select>
+                            </div>
+                        `}
+                    </div>
                 </div>
-                <div class="event-details">
-                    <div>項目：<span>${ev.category}</span></div>
-                    <div>賽制：<span>${ev.format}</span></div>
-                    <div>總輪數：<span>${ev.totalRounds} 輪</span></div>
-                    <div>報名人數：<span>${playersCount} / ${ev.maxPlayers} 人</span></div>
-                    <div style="grid-column: span 2;">時間：<span>${ev.startTime.replace('T', ' ')} ~ ${ev.endTime.replace('T', ' ')}</span></div>
-                </div>
-                ${roundsRuleHTML}
-                ${bracketHTML}
             `;
 
-            // 綁定報名事件
-            setTimeout(() => {
-                const btn = document.getElementById(`join-btn-${eventId}`);
-                if (btn && !isJoined) {
-                    btn.addEventListener('click', () => joinEvent(eventId, ev));
-                }
-            }, 0);
-
-            return card;
+            roundsContainer.appendChild(roundDiv);
         }
+    }
 
-        // 報名比賽 logic
-        async function joinEvent(eventId, ev) {
-            if (!currentUser) {
-                alert("請先登入 Google 帳號即可一鍵報名！");
+    // 監聽總輪數欄位變動
+    totalRoundsInput.addEventListener('input', buildRoundFields);
+
+    // 發布比賽表單處理
+    competitionForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const name = document.getElementById('compName').value.trim();
+        const item = document.getElementById('compItem').value;
+        const rule = document.getElementById('compRule').value;
+        const maxPlayers = document.getElementById('maxPlayers').value;
+        const totalRounds = totalRoundsInput.value;
+
+        // 逐一收集各輪次的時間與晉級條件
+        const roundCards = document.querySelectorAll('.round-card');
+        const roundsData = [];
+
+        for (let i = 0; i < roundCards.length; i++) {
+            const card = roundCards[i];
+            const startTime = card.querySelector('.round-start-time').value;
+            const endTime = card.querySelector('.round-end-time').value;
+
+            if (new Date(startTime) >= new Date(endTime)) {
+                alert(`第 ${i + 1} 輪的結束時間必須晚於開始時間！`);
                 return;
             }
-            const participantsRef = ref(db, `events/${eventId}/participants/${currentUser.uid}`);
-            try {
-                await set(participantsRef, {
-                    name: currentUser.displayName,
-                    email: currentUser.email,
-                    photoURL: currentUser.photoURL,
-                    joinedAt: Date.now()
-                });
-                alert("🎉 報名成功！");
-            } catch (err) {
-                alert(`報名失敗：${err.message}`);
-            }
+
+            const advanceTypeSelect = card.querySelector('.round-advance-type');
+            const advanceValueInput = card.querySelector('.round-advance-value');
+            const advanceUnitSelect = card.querySelector('.round-advance-unit');
+
+            roundsData.push({
+                roundIndex: i + 1,
+                startTime: startTime,
+                endTime: endTime,
+                advanceType: advanceTypeSelect ? advanceTypeSelect.value : 'final',
+                advanceValue: advanceValueInput ? advanceValueInput.value : null,
+                advanceUnit: advanceUnitSelect ? advanceUnitSelect.value : null
+            });
         }
 
-        // 生成單淘汰樹狀對戰圖
-        function renderBracketTree(roundNum, maxPlayers) {
-            let roundsCount = Math.ceil(Math.log2(maxPlayers));
-            if (roundsCount < 1) roundsCount = 1;
-
-            let html = `<div class="bracket-container">
-                <div style="font-size:0.85rem; color: var(--accent-blue); margin-bottom: 5px;">⚔️ 第 ${roundNum} 輪：單淘汰樹狀圖</div>
-                <div class="bracket-tree">`;
-
-            let currentMatches = Math.pow(2, roundsCount - 1);
-
-            for (let r = 1; r <= roundsCount; r++) {
-                const roundName = r === roundsCount ? '決賽' : `戰隊 R${r}`;
-                html += `<div class="bracket-round">
-                    <div style="text-align: center; font-size: 0.75rem; color: var(--text-secondary);">${roundName}</div>`;
-                
-                for (let m = 0; m < currentMatches; m++) {
-                    html += `
-                        <div class="bracket-match">
-                            <div class="bracket-player"><span>選手 A</span><span>--</span></div>
-                            <div class="bracket-player"><span>選手 B</span><span>--</span></div>
-                        </div>
-                    `;
-                }
-                html += `</div>`;
-                currentMatches = Math.floor(currentMatches / 2);
-            }
-
-            html += `</div></div>`;
-            return html;
-        }
-
-        // 全域頁籤切換
-        window.switchTab = function(tabName) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.content-section').forEach(sec => sec.classList.add('hidden'));
-
-            if (tabName === 'active-events') {
-                event.target.classList.add('active');
-                document.getElementById('tab-active-events').classList.remove('hidden');
-            } else if (tabName === 'search-results') {
-                event.target.classList.add('active');
-                document.getElementById('tab-search-results').classList.remove('hidden');
-            }
+        const newCompetition = {
+            id: 'comp_' + Date.now(),
+            name: name,
+            item: item,
+            rule: rule,
+            maxPlayers: maxPlayers,
+            totalRounds: totalRounds,
+            rounds: roundsData
         };
 
-        // 成績查詢邏輯
-        window.performSearch = async function() {
-            const keyword = document.getElementById('search-keyword').value.trim();
-            const container = document.getElementById('search-results-list');
-            if (!keyword) {
-                container.innerHTML = `<div class="empty-box"><p style="font-size: 1.2rem;">請輸入關鍵字搜尋</p></div>`;
-                return;
-            }
+        globalCompetitions.push(newCompetition);
 
-            container.innerHTML = `<div style="text-align:center;">🔍 搜尋中...</div>`;
+        alert('🎉 比賽發布成功！每一輪均已個別設定獨特的開始與結束時間。');
 
-            const eventsRef = ref(db, 'events');
-            const snapshot = await get(eventsRef);
-            const events = snapshot.val();
+        // 清空表單與刷新畫面
+        competitionForm.reset();
+        buildRoundFields();
+        refreshMatchesUI();
+    });
 
-            if (!events) {
-                container.innerHTML = `<div class="empty-box"><p style="font-size: 1.2rem;">找不到相關紀錄</p></div>`;
-                return;
-            }
+    // 刷新比賽列表與下拉選項
+    function refreshMatchesUI() {
+        if (globalCompetitions.length === 0) {
+            matchesList.innerHTML = '<div class="empty-state">目前尚未發布任何比賽，請透過管理員控制台進行發布。</div>';
+            searchMatchSelect.innerHTML = '<option value="">-- 請選擇比賽 --</option>';
+            return;
+        }
 
-            let foundCount = 0;
-            container.innerHTML = '';
+        // 清空列表
+        matchesList.innerHTML = '';
+        searchMatchSelect.innerHTML = '<option value="">-- 請選擇比賽 --</option>';
 
-            Object.keys(events).forEach(key => {
-                const ev = events[key];
-                // 搜尋賽事標題或比賽項目
-                if (ev.title.includes(keyword) || ev.category.includes(keyword)) {
-                    foundCount++;
-                    const card = renderEventCard(key, ev);
-                    container.appendChild(card);
+        globalCompetitions.forEach(comp => {
+            // 渲染報名頁面卡片
+            const card = document.createElement('div');
+            card.className = 'match-card';
+
+            let roundsHtml = '';
+            comp.rounds.forEach(r => {
+                let ruleText = '';
+                if (r.advanceType === 'final') {
+                    ruleText = '排名決賽 (選出冠亞季軍)';
+                } else {
+                    const unitName = r.advanceUnit === 'percent' ? '%' : '名';
+                    ruleText = `前 ${r.advanceValue}${unitName} 晉級`;
                 }
+
+                roundsHtml += `
+                    <div class="round-tag">
+                        <span><strong>第 ${r.roundIndex} 輪：</strong> ${formatDateTime(r.startTime)} ～ ${formatDateTime(r.endTime)}</span>
+                        <span style="color: var(--primary-green);">${ruleText}</span>
+                    </div>
+                `;
             });
 
-            if (foundCount === 0) {
-                container.innerHTML = `<div class="empty-box"><p style="font-size: 1.2rem;">未找到包含「${keyword}」的相關賽事與成績</p></div>`;
-            }
-        };
-    </script>
+            card.innerHTML = `
+                <div class="match-title">${comp.name}</div>
+                <div class="match-meta">
+                    <span>📌 項目：${comp.item}</span>
+                    <span>📜 賽制：${comp.rule}</span>
+                    <span>👥 報名上限：${comp.maxPlayers} 人</span>
+                    <span>🔄 總輪數：${comp.totalRounds} 輪</span>
+                </div>
+                <div class="match-rounds-list">
+                    <div style="font-weight: bold; margin-bottom: 4px; font-size: 0.9rem; color: #aaaaaa;">各輪次獨立時間表：</div>
+                    ${roundsHtml}
+                </div>
+            `;
+
+            matchesList.appendChild(card);
+
+            // 渲染查詢下拉選單
+            const option = document.createElement('option');
+            option.value = comp.id;
+            option.textContent = comp.name;
+            searchMatchSelect.appendChild(option);
+        });
+    }
+
+    // 渲染成績查詢選擇後的內容
+    function renderMatchResults(compId) {
+        if (!compId) {
+            resultsDisplayArea.className = 'empty-state';
+            resultsDisplayArea.innerHTML = '請選擇欲查詢的比賽以檢視各輪次的獨立開放時間與晉級名單。';
+            return;
+        }
+
+        const comp = globalCompetitions.find(c => c.id === compId);
+        if (!comp) return;
+
+        resultsDisplayArea.className = '';
+        let roundsDetail = '';
+
+        comp.rounds.forEach(r => {
+            roundsDetail += `
+                <div style="background-color: #242424; border: 1px solid #333; padding: 12px; border-radius: 6px; margin-top: 10px;">
+                    <div style="color: var(--accent-blue); font-weight: bold;">第 ${r.roundIndex} 輪 時間表與賽制</div>
+                    <div style="font-size: 0.9rem; color: #ccc; margin-top: 4px;">
+                        開放時間：${formatDateTime(r.startTime)} 至 ${formatDateTime(r.endTime)}
+                    </div>
+                </div>
+            `;
+        });
+
+        resultsDisplayArea.innerHTML = `
+            <h3 style="color: #fff; font-size: 1.1rem;">${comp.name}</h3>
+            <p style="color: #aaa; font-size: 0.9rem; margin-top: 4px;">比賽項目：${comp.item} | 賽制：${comp.rule}</p>
+            ${roundsDetail}
+        `;
+    }
+
+    // 初始化載入
+    buildRoundFields();
+</script>
+
 </body>
 </html>
