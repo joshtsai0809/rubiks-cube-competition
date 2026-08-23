@@ -209,7 +209,6 @@
 
         <section class="events-section">
             <h2>進行中賽事</h2>
-            <!-- 賽事動態渲染區塊 -->
             <div id="events-container">
                 <div class="empty-box">
                     <p style="font-size: 1.2rem; margin-bottom: 0.5rem;">🚫 目前暫無進行中的比賽</p>
@@ -240,14 +239,14 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
         import { 
             getAuth, 
-            signInWithRedirect, 
-            getRedirectResult,
+            signInWithPopup, 
             GoogleAuthProvider, 
             signOut, 
-            onAuthStateChanged 
+            onAuthStateChanged,
+            setPersistence,
+            browserLocalPersistence
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { 
             getDatabase, 
@@ -255,7 +254,6 @@
             onValue 
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 更新為你最新的 Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyCjqWbTNTscNcwQxXl4yDskncVO4g9b2u8",
             authDomain: "rubiks-cube-competition.firebaseapp.com",
@@ -268,10 +266,12 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
         const auth = getAuth(app);
         const db = getDatabase(app);
         const provider = new GoogleAuthProvider();
+
+        // 設置登入狀態持續儲存於瀏覽器本地
+        setPersistence(auth, browserLocalPersistence);
 
         const loginBtn = document.getElementById('login-btn');
         const logoutBtn = document.getElementById('logout-btn');
@@ -281,14 +281,15 @@
         const eventsContainer = document.getElementById('events-container');
         const leaderboardBody = document.getElementById('leaderboard-body');
 
-        // 使用轉址登入 (signInWithRedirect)
-        loginBtn.addEventListener('click', () => {
-            signInWithRedirect(auth, provider);
-        });
-
-        // 接收轉址回來的登入結果
-        getRedirectResult(auth).catch((error) => {
-            console.error("登入失敗：", error.message);
+        // 使用獨立彈窗登入，並跳出詳細錯誤提示
+        loginBtn.addEventListener('click', async () => {
+            try {
+                const result = await signInWithPopup(auth, provider);
+                console.log("登入成功：", result.user);
+            } catch (error) {
+                console.error("登入失敗詳細原因：", error);
+                alert(`登入失敗！\n錯誤代碼：${error.code}\n訊息：${error.message}`);
+            }
         });
 
         // 登出
@@ -309,7 +310,7 @@
             }
         });
 
-        // 監聽賽事資料 (無資料時顯示「🚫 目前暫無進行中的比賽」)
+        // 監聽賽事資料
         const eventsRef = ref(db, 'events');
         onValue(eventsRef, (snapshot) => {
             const events = snapshot.val();
@@ -334,6 +335,8 @@
                 html += '</div>';
                 eventsContainer.innerHTML = html;
             }
+        }, (error) => {
+            console.error("讀取賽事資料失敗:", error);
         });
 
         // 監聽英雄榜資料
@@ -359,6 +362,8 @@
                 `;
                 leaderboardBody.appendChild(tr);
             });
+        }, (error) => {
+            console.error("讀取排行榜失敗:", error);
         });
     </script>
 </body>
