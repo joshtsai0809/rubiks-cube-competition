@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>線上魔方賽事防作弊錄影系統 (穩定版)</title>
+  <title>線上魔方賽事防作弊錄影系統</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: #1a1a1a;
@@ -28,21 +32,34 @@
       max-width: 900px;
       width: 100%;
     }
-    h1 { font-size: 1.5rem; margin-bottom: 20px; color: #e0e0e0; }
-    video { display: none; }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      color: #e0e0e0;
+    }
+    video {
+      display: none;
+    }
     .canvas-container {
       width: 100%;
       aspect-ratio: 4 / 3;
       background-color: #000;
       border-radius: 12px;
       overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
-    canvas { width: 100%; height: 100%; display: block; }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
     .camera-select-group {
       margin-top: 15px;
       display: flex;
       align-items: center;
       gap: 10px;
+      width: 100%;
+      justify-content: center;
     }
     select {
       padding: 8px 12px;
@@ -50,11 +67,15 @@
       background: #3a3a3a;
       color: #fff;
       border: 1px solid #555;
+      font-size: 0.9rem;
+      max-width: 300px;
     }
     .controls {
       margin-top: 20px;
       display: flex;
       gap: 16px;
+      width: 100%;
+      justify-content: center;
     }
     button {
       padding: 14px 28px;
@@ -63,15 +84,32 @@
       border: none;
       border-radius: 8px;
       cursor: pointer;
+      transition: all 0.2s ease;
     }
-    .btn-start { background-color: #2e7d32; color: #ffffff; }
-    .btn-stop { background-color: #c62828; color: #ffffff; }
+    .btn-start {
+      background-color: #2e7d32;
+      color: #ffffff;
+    }
+    .btn-start:hover {
+      background-color: #388e3c;
+    }
+    .btn-stop {
+      background-color: #c62828;
+      color: #ffffff;
+    }
+    .btn-stop:hover {
+      background-color: #d32f2f;
+    }
     button:disabled, select:disabled {
       background-color: #424242;
       color: #757575;
       cursor: not-allowed;
     }
-    .status-text { margin-top: 12px; font-size: 0.9rem; color: #aaa; }
+    .status-text {
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
   </style>
 </head>
 <body>
@@ -79,12 +117,15 @@
 <div class="main-card">
   <h1>線上魔方賽事防作弊錄影系統</h1>
 
+  <!-- 底層攝影機串流 -->
   <video id="webcam" autoplay playsinline muted></video>
 
+  <!-- 合成畫面 Canvas -->
   <div class="canvas-container">
     <canvas id="recorderCanvas" width="960" height="720"></canvas>
   </div>
 
+  <!-- 鏡頭選擇選單 -->
   <div class="camera-select-group">
     <label for="cameraSelect">選擇鏡頭：</label>
     <select id="cameraSelect"><option value="">讀取鏡頭列表中...</option></select>
@@ -113,13 +154,14 @@
   let currentStream = null;
   let animationFrameId = null;
 
-  // 檢查瀏覽器最佳支援格式
+  // 1. 優先採用 MP4 格式，確保雲端硬碟可以線上預覽播放
   function getSupportedMimeType() {
     const types = [
-      'video/webm;codecs=vp8',
-      'video/webm',
+      'video/mp4;codecs=h264,aac',
       'video/mp4;codecs=avc1',
-      'video/mp4'
+      'video/mp4',
+      'video/webm;codecs=vp8',
+      'video/webm'
     ];
     for (let type of types) {
       if (MediaRecorder.isTypeSupported(type)) return type;
@@ -127,6 +169,7 @@
     return '';
   }
 
+  // 2. 讀取裝置視訊設備
   async function getCameraDevices() {
     const devices = await navigator.mediaDevices.enumerateDevices();
     const videoDevices = devices.filter(device => device.kind === 'videoinput');
@@ -140,6 +183,7 @@
     });
   }
 
+  // 3. 啟動相機串流
   async function startCamera(deviceId) {
     if (currentStream) {
       currentStream.getTracks().forEach(track => track.stop());
@@ -162,11 +206,12 @@
       statusText.textContent = "鏡頭就緒，請點擊開始比賽。";
       if (!animationFrameId) renderFrame();
     } catch (err) {
-      statusText.textContent = "無法啟動鏡頭或麥克風。";
+      statusText.textContent = "無法啟動鏡頭或麥克風，請檢查存取權限。";
       console.error(err);
     }
   }
 
+  // 4. 生成 WCA 官方標準打亂公式（20步）
   function generateWcaScramble() {
     const faces = ["U", "D", "L", "R", "F", "B"];
     const modifiers = ["", "'", "2"];
@@ -184,15 +229,19 @@
     return scramble.join(" ");
   }
 
+  // 5. 畫面即時渲染（鏡頭 + 下方公式列）
   function renderFrame() {
     const cameraHeight = canvas.height * 0.8;
     const scrambleHeight = canvas.height * 0.2;
 
+    // 上半部繪製相機畫面
     ctx.drawImage(video, 0, 0, canvas.width, cameraHeight);
 
+    // 下半部繪製灰底公式區域
     ctx.fillStyle = "#e0e0e0";
     ctx.fillRect(0, cameraHeight, canvas.width, scrambleHeight);
 
+    // 繪製黑色公式文字
     ctx.fillStyle = "#000000";
     ctx.font = "bold 28px monospace";
     ctx.textAlign = "center";
@@ -202,16 +251,18 @@
     animationFrameId = requestAnimationFrame(renderFrame);
   }
 
+  // 6. 更換鏡頭觸發事件
   cameraSelect.addEventListener('change', () => {
     startCamera(cameraSelect.value);
   });
 
+  // 7. 開始錄影並進入比賽
   startBtn.addEventListener('click', () => {
     scrambleText = generateWcaScramble();
 
-    const canvasStream = canvas.captureStream(25); // 降低至 25 FPS 減少記憶體消耗
+    const canvasStream = canvas.captureStream(25); // 限制 25 FPS 防過熱
     
-    // 安全將麥克風加入串流
+    // 注入麥克風音訊
     if (currentStream && currentStream.getAudioTracks().length > 0) {
       canvasStream.addTrack(currentStream.getAudioTracks()[0].clone());
     }
@@ -233,7 +284,7 @@
 
     mediaRecorder.onstop = saveVideo;
 
-    // 每 1000ms (1秒) 強制切割並釋放資料，防崩潰關鍵
+    // 每 1000ms 切割防當機
     mediaRecorder.start(1000);
 
     startBtn.disabled = true;
@@ -242,6 +293,7 @@
     statusText.textContent = "比賽錄影中...";
   });
 
+  // 8. 結束錄影
   stopBtn.addEventListener('click', () => {
     statusText.textContent = "正在處理並匯出影片，請稍候...";
     stopBtn.disabled = true;
@@ -251,12 +303,14 @@
     }
   });
 
+  // 9. 下載匯出檔
   function saveVideo() {
     try {
-      const mimeType = mediaRecorder.mimeType || 'video/webm';
-      const blob = new Blob(recordedChunks, { type: mimeType });
-      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+      const mimeType = mediaRecorder.mimeType || 'video/mp4';
+      const isMp4 = mimeType.includes('mp4');
+      const ext = isMp4 ? 'mp4' : 'webm';
       
+      const blob = new Blob(recordedChunks, { type: mimeType });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
@@ -271,7 +325,7 @@
         URL.revokeObjectURL(url);
         startBtn.disabled = false;
         cameraSelect.disabled = false;
-        statusText.textContent = "影片已成功下載！";
+        statusText.textContent = "影片已成功匯出！上傳至雲端即可線上播放。";
       }, 500);
 
     } catch (err) {
