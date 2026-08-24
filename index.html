@@ -37,7 +37,6 @@
       margin-bottom: 20px;
       color: #e0e0e0;
     }
-    /* 隱藏原始視訊標籤，僅顯示繪製後的 Canvas */
     video {
       display: none;
     }
@@ -54,8 +53,25 @@
       height: 100%;
       display: block;
     }
+    .camera-select-group {
+      margin-top: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      justify-content: center;
+    }
+    select {
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: #3a3a3a;
+      color: #fff;
+      border: 1px solid #555;
+      font-size: 0.9rem;
+      max-width: 300px;
+    }
     .controls {
-      margin-top: 24px;
+      margin-top: 20px;
       display: flex;
       gap: 16px;
       width: 100%;
@@ -70,21 +86,11 @@
       cursor: pointer;
       transition: all 0.2s ease;
     }
-    .btn-start {
-      background-color: #2e7d32;
-      color: #ffffff;
-    }
-    .btn-start:hover {
-      background-color: #388e3c;
-    }
-    .btn-stop {
-      background-color: #c62828;
-      color: #ffffff;
-    }
-    .btn-stop:hover {
-      background-color: #d32f2f;
-    }
-    button:disabled {
+    .btn-start { background-color: #2e7d32; color: #ffffff; }
+    .btn-start:hover { background-color: #388e3c; }
+    .btn-stop { background-color: #c62828; color: #ffffff; }
+    .btn-stop:hover { background-color: #d32f2f; }
+    button:disabled, select:disabled {
       background-color: #424242;
       color: #757575;
       cursor: not-allowed;
@@ -101,12 +107,16 @@
 <div class="main-card">
   <h1>線上魔方賽事防作弊錄影系統</h1>
 
-  <!-- 底層攝影機串流 -->
   <video id="webcam" autoplay playsinline muted></video>
 
-  <!-- 合成後的畫面（相機 + 打亂公式） -->
   <div class="canvas-container">
     <canvas id="recorderCanvas" width="1280" height="960"></canvas>
+  </div>
+
+  <!-- 鏡頭切換選單 -->
+  <div class="camera-select-group">
+    <label for="cameraSelect">選擇鏡頭：</label>
+    <select id="cameraSelect"><option value="">讀取鏡頭列表中...</option></select>
   </div>
 
   <div class="controls">
@@ -121,6 +131,7 @@
   const video = document.getElementById('webcam');
   const canvas = document.getElementById('recorderCanvas');
   const ctx = canvas.getContext('2d');
+  const cameraSelect = document.getElementById('cameraSelect');
   const startBtn = document.getElementById('startBtn');
   const stopBtn = document.getElementById('stopBtn');
   const statusText = document.getElementById('status');
@@ -128,26 +139,52 @@
   let mediaRecorder;
   let recordedChunks = [];
   let scrambleText = "點擊「開始比賽」後顯示打亂公式";
-  let isRecording = false;
+  let currentStream = null;
 
-  // 1. 初始化相機
-  async function initCamera() {
+  // 1. 取得裝置上的鏡頭清單
+  async function getCameraDevices() {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+    
+    cameraSelect.innerHTML = '';
+    videoDevices.forEach((device, index) => {
+      const option = document.createElement('option');
+      option.value = device.deviceId;
+      option.text = device.label || `攝影機 ${index + 1}`;
+      cameraSelect.appendChild(option);
+    });
+  }
+
+  // 2. 啟動指定 ID 的鏡頭
+  async function startCamera(deviceId) {
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => track.stop());
+    }
+
+    const constraints = {
+      video: deviceId ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } } 
+                      : { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: true
+    };
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: true
-      });
-      video.srcObject = stream;
+      currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+      video.srcObject = currentStream;
       await video.play();
-      statusText.textContent = "系統就緒，準備開始比賽。";
+      
+      // 初次啟動授權後，取得標籤名稱並更新選單
+      await getCameraDevices();
+      if (deviceId) cameraSelect.value = deviceId;
+      
+      statusText.textContent = "鏡頭就緒，請調整拍攝角度後點擊開始比賽。";
       requestAnimationFrame(renderFrame);
     } catch (err) {
-      statusText.textContent = "無法存取攝影機與麥克風，請檢查存取權限。";
+      statusText.textContent = "無法啟動鏡頭，請檢查權限設定。";
       console.error(err);
     }
   }
 
-  // 2. 生成標準三階魔方打亂公式（20步）
+  // 3. 生成 WCA 官方標準打亂公式
   function generateWcaScramble() {
     const faces = ["U", "D", "L", "R", "F", "B"];
     const modifiers = ["", "'", "2"];
@@ -165,19 +202,16 @@
     return scramble.join(" ");
   }
 
-  // 3. 即時將「相機畫面」與「打亂公式」繪製到 Canvas
+  // 4. 即時繪製 Canvas（相機 + 公式）
   function renderFrame() {
-    const cameraHeight = canvas.height * 0.8; // 80% 留給相機畫面
-    const scrambleHeight = canvas.height * 0.2; // 20% 留給打亂公式
+    const cameraHeight = canvas.height * 0.8;
+    const scrambleHeight = canvas.height * 0.2;
 
-    // 繪製相機畫面（上方灰色區塊位置）
     ctx.drawImage(video, 0, 0, canvas.width, cameraHeight);
 
-    // 繪製下方公式區域背景（淡灰色背景）
     ctx.fillStyle = "#e0e0e0";
     ctx.fillRect(0, cameraHeight, canvas.width, scrambleHeight);
 
-    // 繪製打亂公式文字（黑色字體）
     ctx.fillStyle = "#000000";
     ctx.font = "bold 36px monospace";
     ctx.textAlign = "center";
@@ -187,58 +221,56 @@
     requestAnimationFrame(renderFrame);
   }
 
-  // 4. 開始錄影與比賽
+  // 5. 切換鏡頭監聽事件
+  cameraSelect.addEventListener('change', () => {
+    startCamera(cameraSelect.value);
+  });
+
+  // 6. 開始比賽並錄影
   startBtn.addEventListener('click', () => {
-    // 進入全螢幕防干擾
     if (document.documentElement.requestFullscreen) {
       document.documentElement.requestFullscreen().catch(() => {});
     }
 
-    // 生成當前回合的動態公式
     scrambleText = generateWcaScramble();
 
-    // 擷取 Canvas 畫面數據串流 (30 FPS)
     const canvasStream = canvas.captureStream(30);
-
-    // 結合聲音軌道
-    if (video.srcObject && video.srcObject.getAudioTracks().length > 0) {
-      canvasStream.addTrack(video.srcObject.getAudioTracks()[0]);
+    if (currentStream && currentStream.getAudioTracks().length > 0) {
+      canvasStream.addTrack(currentStream.getAudioTracks()[0]);
     }
 
     recordedChunks = [];
     mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
 
     mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        recordedChunks.push(e.data);
-      }
+      if (e.data.size > 0) recordedChunks.push(e.data);
     };
 
     mediaRecorder.onstop = saveVideo;
 
     mediaRecorder.start();
-    isRecording = true;
 
+    // 錄影開始後鎖定「切換鏡頭」選單，防止比賽中途偷偷換鏡頭
     startBtn.disabled = true;
+    cameraSelect.disabled = true;
     stopBtn.disabled = false;
     statusText.textContent = "比賽進行中，畫面與聲音全程錄影中...";
   });
 
-  // 5. 結束比賽並儲存
+  // 7. 結束比賽並儲存
   stopBtn.addEventListener('click', () => {
     mediaRecorder.stop();
-    isRecording = false;
 
     if (document.exitFullscreen && document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
     }
 
     startBtn.disabled = false;
+    cameraSelect.disabled = false;
     stopBtn.disabled = true;
     statusText.textContent = "錄影已完成，正在生成影片下載...";
   });
 
-  // 下載影片檔
   function saveVideo() {
     const blob = new Blob(recordedChunks, { type: 'video/webm' });
     const url = URL.createObjectURL(blob);
@@ -249,7 +281,7 @@
     URL.revokeObjectURL(url);
   }
 
-  window.onload = initCamera;
+  window.onload = () => startCamera();
 </script>
 
 </body>
