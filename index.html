@@ -497,7 +497,7 @@
                 <!-- 動態生成的各輪晉級規則與獨立時間設定區 -->
                 <div class="rounds-config-container">
                     <label style="font-size: 0.9rem; color: var(--accent-color); font-weight: bold; margin-bottom: 10px; display: block;">
-                        📋 設定每一輪的晉級規則與比賽時間
+                        📋 設定每一輪的比賽類型與時間
                     </label>
                     <div id="rounds-settings-list">
                         <!-- 由 JavaScript 動態生成 -->
@@ -645,16 +645,16 @@
                     ruleHTML = `
                         <span style="font-weight: bold; color: var(--accent-blue);">第 ${i} 輪 (決賽)</span>
                         <select class="round-type" data-round="${i}" style="grid-column: span 2;">
-                            <option value="ranking">排名決賽 (選出冠亞季軍)</option>
-                            <option value="knockout">單淘汰決賽 (冠亞軍對決)</option>
+                            <option value="ranking">排名賽</option>
+                            <option value="knockout">淘汰賽</option>
                         </select>
                     `;
                 } else {
                     ruleHTML = `
                         <span style="font-weight: bold;">第 ${i} 輪</span>
                         <select class="round-type" data-round="${i}">
-                            <option value="ranking">標準排名晉級</option>
-                            <option value="knockout">單淘汰賽</option>
+                            <option value="ranking">排名賽</option>
+                            <option value="knockout">淘汰賽</option>
                         </select>
                         <div style="display: flex; gap: 5px;">
                             <input type="number" class="round-adv-val" placeholder="數字" value="50" style="width: 60%;">
@@ -717,6 +717,7 @@
                 const type = item.querySelector('.round-type').value;
                 const startTime = item.querySelector('.round-start-time').value;
                 const endTime = item.querySelector('.round-end-time').value;
+                const typeText = type === 'knockout' ? '淘汰賽' : '排名賽';
 
                 if (rNum === totalRounds) {
                     roundsConfig.push({ 
@@ -732,7 +733,7 @@
                     roundsConfig.push({
                         round: rNum,
                         type: type,
-                        rule: type === 'knockout' ? '單淘汰晉級' : `晉級前 ${val}${unit}`,
+                        rule: `晉級前 ${val}${unit}`,
                         startTime: startTime,
                         endTime: endTime
                     });
@@ -787,16 +788,17 @@
             const playersCount = ev.participants ? Object.keys(ev.participants).length : 0;
             const isJoined = currentUser && ev.participants && ev.participants[currentUser.uid];
 
-            let roundsRuleHTML = '<div class="rounds-info"><div class="rounds-info-title">🏆 各輪晉級與比賽時間規劃：</div>';
+            let roundsRuleHTML = '<div class="rounds-info"><div class="rounds-info-title">🏆 各輪賽制與比賽時間規劃：</div>';
             let bracketHTML = '';
 
             ev.roundsConfig.forEach(r => {
                 const startStr = r.startTime ? r.startTime.replace('T', ' ') : '未定';
                 const endStr = r.endTime ? r.endTime.replace('T', ' ') : '未定';
+                const typeText = r.type === 'knockout' ? '淘汰賽' : '排名賽';
                 
                 roundsRuleHTML += `
                     <div class="round-info-step">
-                        ▪ <strong>第 ${r.round} 輪</strong>：[${r.type === 'knockout' ? '單淘汰賽' : '標準排名'}] ${r.rule}
+                        ▪ <strong>第 ${r.round} 輪</strong>：[${typeText}] ${r.rule}
                         <br><span class="round-time-tag">⏱️ 時間：${startStr} ~ ${endStr}</span>
                     </div>`;
                 if (r.type === 'knockout') {
@@ -853,13 +855,13 @@
             }
         }
 
-        // 生成單淘汰樹狀對戰圖
+        // 生成淘汰賽樹狀圖
         function renderBracketTree(roundNum, maxPlayers) {
             let roundsCount = Math.ceil(Math.log2(maxPlayers));
             if (roundsCount < 1) roundsCount = 1;
 
             let html = `<div class="bracket-container">
-                <div style="font-size:0.85rem; color: var(--accent-blue); margin-bottom: 5px;">⚔️ 第 ${roundNum} 輪：單淘汰樹狀圖</div>
+                <div style="font-size:0.85rem; color: var(--accent-blue); margin-bottom: 5px;">⚔️ 第 ${roundNum} 輪：淘汰賽對戰圖</div>
                 <div class="bracket-tree">`;
 
             let currentMatches = Math.pow(2, roundsCount - 1);
