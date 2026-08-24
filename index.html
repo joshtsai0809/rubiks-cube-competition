@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>線上魔方賽事防作弊錄影系統</title>
-  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -93,16 +92,13 @@
 
   <div class="controls">
     <button id="startBtn" class="btn-start">開始比賽並錄影</button>
-    <button id="stopBtn" class="btn-stop" disabled>結束並下載 MP4 影片</button>
+    <button id="stopBtn" class="btn-stop" disabled>結束並下載影片</button>
   </div>
 
-  <p id="status" class="status-text">載入系統中...</p>
+  <p id="status" class="status-text">請允許攝影機與麥克風存取權限...</p>
 </div>
 
 <script>
-  const { createFFmpeg, fetchFile } = FFmpeg;
-  const ffmpeg = createFFmpeg({ log: false });
-
   const video = document.getElementById('webcam');
   const canvas = document.getElementById('recorderCanvas');
   const ctx = canvas.getContext('2d');
@@ -115,42 +111,33 @@
   let recordedChunks = [];
   let scrambleText = "點擊「開始比賽」後顯示打亂公式";
   let currentStream = null;
-  let animationFrameId = null;
 
-  async function initSystem() {
-    statusText.textContent = "正在載入 MP4 轉碼引擎...";
+  // 1. 取得裝置相機清單
+  async function getCameraDevices() {
     try {
-      if (!ffmpeg.isLoaded()) {
-        await ffmpeg.load();
-      }
-      await startCamera();
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      
+      cameraSelect.innerHTML = '';
+      videoDevices.forEach((device, index) => {
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        option.text = device.label || `攝影機 ${index + 1}`;
+        cameraSelect.appendChild(option);
+      });
     } catch (e) {
-      statusText.textContent = "轉碼引擎初始化失敗，請更換瀏覽器後重試。";
-      console.error(e);
+      console.error("無法列出鏡頭：", e);
     }
   }
 
-  async function getCameraDevices() {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const videoDevices = devices.filter(device => device.kind === 'videoinput');
-    
-    cameraSelect.innerHTML = '';
-    videoDevices.forEach((device, index) => {
-      const option = document.createElement('option');
-      option.value = device.deviceId;
-      option.text = device.label || `攝影機 ${index + 1}`;
-      cameraSelect.appendChild(option);
-    });
-  }
-
+  // 2. 啟動鏡頭（原生 MediaDevices API）
   async function startCamera(deviceId) {
     if (currentStream) {
       currentStream.getTracks().forEach(track => track.stop());
     }
 
     const constraints = {
-      video: deviceId ? { deviceId: { exact: deviceId }, width: 960, height: 720 } 
-                      : { facingMode: "user", width: 960, height: 720 },
+      video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "user" },
       audio: true
     };
 
@@ -162,14 +149,15 @@
       await getCameraDevices();
       if (deviceId) cameraSelect.value = deviceId;
       
-      statusText.textContent = "鏡頭就緒，請點擊開始比賽。";
-      if (!animationFrameId) renderFrame();
+      statusText.textContent = "鏡頭就緒，請點擊「開始比賽」";
+      renderFrame();
     } catch (err) {
-      statusText.textContent = "無法啟動鏡頭或麥克風，請檢查存取權限。";
-      console.error(err);
+      statusText.textContent = "鏡頭讀取失敗，請確保使用 HTTPS 或在本地 (localhost) 測試並允許權限。";
+      console.error("鏡頭開啟錯誤：", err);
     }
   }
 
+  // 3. WCA 打亂公式生成
   function generateWcaScramble() {
     const faces = ["U", "D", "L", "R", "F", "B"];
     const modifiers = ["", "'", "2"];
@@ -187,6 +175,7 @@
     return scramble.join(" ");
   }
 
+  // 4. 繪製畫面
   function renderFrame() {
     const cameraHeight = canvas.height * 0.8;
     const scrambleHeight = canvas.height * 0.2;
@@ -202,33 +191,45 @@
     ctx.textBaseline = "middle";
     ctx.fillText(scrambleText, canvas.width / 2, cameraHeight + (scrambleHeight / 2));
 
-    animationFrameId = requestAnimationFrame(renderFrame);
+    requestAnimationFrame(renderFrame);
   }
 
   cameraSelect.addEventListener('change', () => {
     startCamera(cameraSelect.value);
   });
 
+  // 5. 開始錄影
   startBtn.addEventListener('click', () => {
     scrambleText = generateWcaScramble();
 
     const canvasStream = canvas.captureStream(25);
-    
     if (currentStream && currentStream.getAudioTracks().length > 0) {
       canvasStream.addTrack(currentStream.getAudioTracks()[0].clone());
     }
 
     recordedChunks = [];
-    mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
+
+    // 優先選取支援 MP4 的 MediaOptions，讓 Google Drive 能夠順利預覽
+    let options = { mimeType: 'video/mp4' };
+    if (!MediaRecorder.isTypeSupported('video/mp4')) {
+      if (MediaRecorder.isTypeSupported('video/webm;codecs=h264')) {
+        options = { mimeType: 'video/webm;codecs=h264' };
+      } else {
+        options = { mimeType: 'video/webm' };
+      }
+    }
+
+    try {
+      mediaRecorder = new MediaRecorder(canvasStream, options);
+    } catch (e) {
+      mediaRecorder = new MediaRecorder(canvasStream);
+    }
 
     mediaRecorder.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) {
-        recordedChunks.push(e.data);
-      }
+      if (e.data && e.data.size > 0) recordedChunks.push(e.data);
     };
 
-    mediaRecorder.onstop = convertAndSaveMp4;
-
+    mediaRecorder.onstop = saveVideo;
     mediaRecorder.start(1000);
 
     startBtn.disabled = true;
@@ -237,30 +238,20 @@
     statusText.textContent = "比賽錄影中...";
   });
 
+  // 6. 停止錄影
   stopBtn.addEventListener('click', () => {
-    statusText.textContent = "正在將影片轉換為標準 MP4 格式，請稍候...";
+    statusText.textContent = "正在匯出影片...";
     stopBtn.disabled = true;
-    
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
     }
   });
 
-  async function convertAndSaveMp4() {
+  // 7. 儲存檔案（強制打包為線上預覽相容格式）
+  function saveVideo() {
     try {
-      const webmBlob = new Blob(recordedChunks, { type: 'video/webm' });
-      
-      // 寫入 FFmpeg 虛擬檔案系統
-      ffmpeg.FS('writeFile', 'input.webm', await fetchFile(webmBlob));
-
-      // 轉換為標準 H.264 MP4
-      await ffmpeg.run('-i', 'input.webm', '-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac', 'output.mp4');
-
-      // 讀取轉換結果
-      const data = ffmpeg.FS('readFile', 'output.mp4');
-      const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
-
-      const url = URL.createObjectURL(mp4Blob);
+      const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
@@ -274,18 +265,15 @@
         URL.revokeObjectURL(url);
         startBtn.disabled = false;
         cameraSelect.disabled = false;
-        statusText.textContent = "標準 MP4 已導出！上傳 Google Drive 可直接線上播放。";
+        statusText.textContent = "影片已下載，可以直接上傳至 Google Drive！";
       }, 500);
-
     } catch (err) {
       console.error(err);
-      statusText.textContent = "轉碼失敗，請確認設備效能是否足夠。";
-      startBtn.disabled = false;
-      cameraSelect.disabled = false;
+      statusText.textContent = "匯出失敗，請重試。";
     }
   }
 
-  window.onload = initSystem;
+  window.onload = () => startCamera();
 </script>
 
 </body>
